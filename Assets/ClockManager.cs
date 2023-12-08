@@ -1,43 +1,63 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ClockManager : MonoBehaviour
 {
+    #region Needle progress
     [SerializeField] GameObject _hourNeedle;
     [SerializeField] GameObject _minuteNeedle;
     [SerializeField] GameObject _secondNeedle;
-    [SerializeField] float _xRotationFromUpOffset = 90f;
-    [SerializeField] float _needleStartRotationY = 0f;
-    [SerializeField] float _needleStartRotationZ = -90f;
-    float _secondTimer = 0f;
 
-    // Each second corresponds to 360/60 ​= 6 degrees
-    readonly float clockMultiplicator = 6f;
+    float _secondTimer = 0f;
+    float _minuteTimer = 0f;
+    float _hourTimer = 0f;
+
+    readonly float _needleStartRotationY = 0f;
+    readonly float _xRotationFromUpOffset = 90f;
+    readonly float _needleStartRotationZ = -90f;
+    readonly float secondsAndMinutesMultiplier = 6f; // Represents the angle multiplier for seconds and minutes (360/60 ​= 6 degrees)
+    readonly float hourMultiplier = 30f; // Represents the angle multiplier for hours (360/12 ​= 30 degrees)
+    #endregion
+
+    void Awake()
+    {
+        UpdateNeedle(_secondNeedle, DateTime.Now.Second, secondsAndMinutesMultiplier);
+        UpdateNeedle(_minuteNeedle, DateTime.Now.Minute, secondsAndMinutesMultiplier);
+        UpdateNeedle(_hourNeedle, DateTime.Now.Hour, hourMultiplier);
+    }
 
     void Update()
     {
+        _ProgressNeedles();
+    }
+
+    void _ProgressNeedles()
+    {
         _secondTimer += Time.deltaTime;
-        if (_secondTimer >= 1f) {
+        _minuteTimer += Time.deltaTime;
+        _hourTimer += Time.deltaTime;
+
+        if (_secondTimer >= 1f)
+        {
             _secondTimer = 0f;
-
-            DateTime currentTime = DateTime.Now;
-
-            int seconds = currentTime.Second;
-            var secondProportionalAngle = seconds * clockMultiplicator;
-            var secondAngle = Mathf.Repeat(secondProportionalAngle + _xRotationFromUpOffset, 360);
-            _secondNeedle.transform.rotation = Quaternion.Euler(secondAngle, 0f, _needleStartRotationZ);
-
-            int minutes = currentTime.Minute;
-            var minuteProportionalAngle = minutes * clockMultiplicator;
-            var minuteAngle = Mathf.Repeat(minuteProportionalAngle + _xRotationFromUpOffset, 360);
-            _minuteNeedle.transform.rotation = Quaternion.Euler(minuteAngle, 0f, _needleStartRotationZ);
-
-            int hours = currentTime.Hour;
-            var hourProportionalAngle = hours * clockMultiplicator;
-            var hourAngle = Mathf.Repeat(hourProportionalAngle + _xRotationFromUpOffset, 360);
-            _hourNeedle.transform.rotation = Quaternion.Euler(hourAngle, 0f, _needleStartRotationZ);
+            UpdateNeedle(_secondNeedle, DateTime.Now.Second, secondsAndMinutesMultiplier);
         }
+        if (_minuteTimer >= 60f)
+        {
+            _minuteTimer = 0f;
+            UpdateNeedle(_minuteNeedle, DateTime.Now.Minute, secondsAndMinutesMultiplier);
+        }
+        if (_hourTimer >= 3600f)
+        {
+            _hourTimer = 0f;
+            UpdateNeedle(_hourNeedle, DateTime.Now.Hour, hourMultiplier);
+        }
+    }
+
+    void UpdateNeedle(GameObject needle, int timeComponent, float multiplier)
+    {
+        float proportionalAngle = timeComponent * multiplier;
+        float angle = Mathf.Repeat(proportionalAngle + _xRotationFromUpOffset, 360);
+        needle.transform.localRotation = Quaternion.Euler(angle, _needleStartRotationY, _needleStartRotationZ);
     }
 }
